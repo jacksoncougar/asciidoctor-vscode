@@ -13,9 +13,9 @@ export namespace Import
         ImagesDirectory: string;
         ImageFilename: string;
 
-        selectionRole: SelectionRole = SelectionRole.Filename;
+        selectionRole: SelectionRole = SelectionRole.AltText;
         encoding: FilenameEncoding = FilenameEncoding.URIEncoding;
-        mode: SelectionMode = SelectionMode.Insert;
+        mode: SelectionMode = SelectionMode.Replace;
     }
 
     enum SelectionRole
@@ -116,7 +116,30 @@ export namespace Import
 
             const is_inline = !selected_text_is_block.test(result);
 
-            const macro = `image${is_inline ? ':' : '::'}${filename}[${alttext}]`
+            let insert_space = false;
+            switch (config.mode)
+            {
+                case SelectionMode.Insert:
+                    {
+                        if (editor.selection.active.character > 0)
+                        {
+                            const char = editor.document.getText(editor.selection.with(editor.selection.active.translate(0, -1)));
+                            insert_space = !/\s/.test(char);
+                        }
+                    }
+                    break;
+                case SelectionMode.Replace:
+                    {
+                        if (editor.selection.start.character > 0)
+                        {
+                            const char = editor.document.getText(editor.selection.with(editor.selection.start.translate(0, -1)));
+                            insert_space = !/^\s/.test(char);
+                        }
+                    }
+                    break;
+            }
+
+            const macro = `${insert_space ? ' ' : ''}image${is_inline ? ':' : '::'}${filename}[${alttext}]`
 
             editor.edit(edit =>
             {

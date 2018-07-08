@@ -2,7 +2,10 @@
 :icons: font
 
 .Todo
-- [ ] Paste Image
+- [ ] Generate Default Image name for empty selections and alt-text modes.
+- [ ] Escape selected alt-text with quotes.
+- [ ] Allow _both_ filename & alt-text roles
+- [ ] Give roles _seperate_ encoding options
 
 
 == Selected Text
