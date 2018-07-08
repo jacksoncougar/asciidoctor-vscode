@@ -26,7 +26,7 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
 import * as fse from 'fs-extra';
-import { spawn } from 'child_process';  
+import { spawn } from 'child_process';
 import * as moment from 'moment';
 import * as upath from 'upath';
 
@@ -105,10 +105,10 @@ export class Paster
         let matches = imagesdir.exec(text);
 
         const index = vscode.window.activeTextEditor.selection.start;
-        const offset = vscode.window.activeTextEditor.document.offsetAt(index);
+        const cursor_index = vscode.window.activeTextEditor.document.offsetAt(index);
 
         let dir = "";
-        while (matches && matches.index < offset)
+        while (matches && matches.index < cursor_index)
         {
             dir = matches[1] || "";
             matches = imagesdir.exec(text);
@@ -132,31 +132,34 @@ export class Paster
      */
     public static is_candidate_selection(selection: string): boolean
     {
-        return !/[\\:*?<>|]/.test(selection);
+        return encodeURIComponent(selection) === selection;
     }
 
     /**
-     * Checks if the selected text is inline.
+     * Checks if the current selection is an `inline` context.
+     * 
      * @param selected Selected text to check.
      * @param document Document where selected text occurs.
      * @param selection Selection
      */
-    public static is_inline_context(
-        selected: string, 
-        document: vscode.TextDocument, 
+    public static is_inline_selection(
+        document: vscode.TextDocument,
         selection: vscode.Selection): boolean
     {
         const line = document.lineAt(selection.start).text;
-        const is_block = new RegExp(`^${selected}\\w*$`);
+        const selected_text = document.getText(selection);
 
-        return selected && !is_block.test(line);
+        const selected_text_is_block = new RegExp(`^${selected_text}\\w*$`);
+
+        return selection.isSingleLine && !selected_text_is_block.test(line);
     }
-    
+
+
     static validate(
         required: {
-            editor: vscode.TextEditor, 
+            editor: vscode.TextEditor,
             selection: string
-        }) :boolean
+        }): boolean
     {
         if (!this.is_candidate_file(required.editor.document))
         {
@@ -164,12 +167,17 @@ export class Paster
             return false;
         }
 
-        if (!this.is_candidate_selection(required.selection))
-        {
-            Logger.showInformationMessage('Selection does not contain a valid file name!');
-            return false;
-        }
         return true;
+    }
+
+    static isValidFilename(selection: string): { result: boolean, value?: string }
+    {
+        if (!this.is_candidate_selection(selection))
+        {
+            return { result: false, value: encodeURIComponent(selection) };
+        }
+
+        return { result: true, value: selection };
     }
 
     public static paste()
@@ -177,10 +185,21 @@ export class Paster
         const editor = vscode.window.activeTextEditor;
         const selection = editor.document.getText(editor.selection);
         const config = vscode.workspace.getConfiguration('AsciiDoc');
+        let filename = selection;
 
-        if(!this.validate({editor, selection})) return;
 
-        this.inlineImage = this.is_inline_context(selection, editor.document, editor.selection);
+
+        if (!this.validate({ editor, selection })) return;
+
+        /**
+         * The selected text is used for the image filename.
+         */
+        if (!this.is_candidate_selection(selection))
+        {
+            filename = encodeURIComponent(selection);
+        }
+
+        //this.inlineImage = this.is_inline_selection(selection, editor.document, editor.selection);
 
         // load config
         this.defaultNameConfig = config['defaultName'] || 'Y-MM-DD-HH-mm-ss'
@@ -195,19 +214,19 @@ export class Paster
         this.nameSuffixConfig = config['nameSuffix'];
         this.insertPatternConfig = config['insertPattern'];
 
-        const validate = (path: string) :boolean => 
+        const validate = (path: string): boolean => 
         {
             return (path.length === path.trim().length);
         }
 
-        if(!validate(this.folderPathConfig)) 
+        if (!validate(this.folderPathConfig)) 
         {
             Logger.showErrorMessage(
                 `The config AsciiDoc.path = '${this.folderPathConfig}' is invalid. Please check your config.`);
             return;
         }
 
-        if(!validate(this.basePathConfig))
+        if (!validate(this.basePathConfig))
         {
             Logger.showErrorMessage(
                 `The config AsciiDoc.path = '${this.basePathConfig}' is invalid. Please check your config.`);
@@ -215,7 +234,7 @@ export class Paster
         }
 
         // replace variable in config
-        
+
         const filePath = editor.document.uri.fsPath;
         const projectPath = vscode.workspace.rootPath;
 
@@ -280,11 +299,11 @@ export class Paster
                 }
 
                 imagePath = this.renderFilePath(
-                    editor.document.languageId, 
-                    this.basePathConfig, 
-                    imagePath, 
-                    this.forceUnixStyleSeparatorConfig, 
-                    this.prefixConfig, 
+                    editor.document.languageId,
+                    this.basePathConfig,
+                    imagePath,
+                    this.forceUnixStyleSeparatorConfig,
+                    this.prefixConfig,
                     this.suffixConfig
                 );
 
@@ -533,9 +552,9 @@ export class Paster
     }
 
     public static replacePathVariable(
-        pathStr: string, 
-        projectRoot: string, 
-        curFilePath: string, 
+        pathStr: string,
+        projectRoot: string,
+        curFilePath: string,
         postFunction: (string) => string = (x) => x
     ): string
     {

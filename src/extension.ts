@@ -21,6 +21,7 @@ import ExportAsPDF from './ExportAsPDF';
 import * as path from "path";
 import * as AsciiDoc from "asciidoctor.js";
 import { Logger, Paster } from './image-paste';
+import { Import } from './asciidoctor-image-paste';
 
 
 let provider: TextDocumentContentProvider;
@@ -85,7 +86,7 @@ export function activate(context: vscode.ExtensionContext): void
     {
         try
         {
-            Paster.paste();
+            Import.Image.ImportFromClipboard(null);
         } catch (e)
         {
             Logger.showErrorMessage(e)

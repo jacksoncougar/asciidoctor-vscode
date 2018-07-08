@@ -1,0 +1,28 @@
+= Image Paste Readme
+:icons: font
+
+.Todo
+- [ ] Paste Image
+
+
+== Selected Text
+
+What treatment should a selection in the document recieve when pasting an 
+image with the plugin?
+
+.Could contribute as the filename footnote:[this is how the plugin currently handles selected text.]
+sunset -> `image::sunset.png[]`
+
+.Could contribute as the directory footnote:[this overrides the `:imagesdir:`` behaviour, which I don't like]
+sunsets/ -> `image::sunsets/image.png[]`
+
+.Could contribute as _both_ filename and directory footnote:[this would only work on relative paths, and again contradicts the `:imagesdir:` behaviour]
+sunsets/sunset -> `image::sunsets/sunset.png[]` 
+
+.Could contribute the alt-text of the image footnote:[this would be useful, but I don't see a clean way to implement it without breaking using selections as filenames]
+'A picture of a sunset over the local beach'- 1986, Victoria +
+-> image::image.png['A picture of a sunset over the local beach'- 1986, Victoria]
+
+Could setup each of these as its own command and just let the user map to them as required. 
+
+image::https://i.imgur.com/hfQiPVs.jpg[]
