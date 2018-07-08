@@ -18,7 +18,11 @@
 			</dict>
 			<dict>
 				<key>include</key>
-				<string>#main</string>
+				<string>#inline_macro</string>
+			</dict>
+			<dict>
+				<key>include</key>
+				<string>#block_macro</string>
 			</dict>
 			<dict>
 				<key>include</key>
@@ -1441,72 +1445,206 @@ Examples:
 			</dict>
 
 
-			<key>main</key>
+			<key>attrlist</key>
 			<dict>
-				<key>begin</key>
-				<string>(^image)(::)</string>
-				<key>beginCaptures</key>
-				<dict>
-					<key>1</key>
-					<dict>
-						<key>name</key>
-						<string>meta.tag meta.preprocessor markup.other keyword.other </string>
-					</dict>
-
-					<key>2</key>
-					<dict>
-						<key>name</key>
-						<string>keyword.operator markup.other</string>
-					</dict>
-				</dict>
 				<key>patterns</key>
 				<array>
 					<dict>
+						<key>match</key>
+						<string>(\\(?:\\|\]))</string>
+						<key>name</key>
+						<string>keyword.asciidoc</string>
+					</dict>
+					<dict>
+						<key>match</key>
+						<string>(=)</string>
+						<key>name</key>
+						<string>keyword.asciidoc</string>
+					</dict>
+					<dict>
+						<key>match</key>
+						<string>(,)</string>
+						<key>name</key>
+						<string>keyword.asciidoc</string>
+					</dict>
+					<dict>
+						<key>include</key>
+						<string>#strings</string>
+					</dict>
+				</array>
+			</dict>
+			<key>block_attrlist</key>
+			<dict>
+				<key>patterns</key>
+				<array>
+					<dict>
+						<key>include</key>
+						<string>#attrlist</string>
+					</dict>
+				</array>
+			</dict>
+			<key>block_macro</key>
+			<dict>
+				<key>patterns</key>
+				<array>
+					<dict>
+						<key>begin</key>
+						<string>(^image|icon)(::)([^\x{003a}]{1}.*?)(\[)(?=.*?\]\s*$)</string>
+						<key>beginCaptures</key>
+						<dict>
+							<key>1</key>
+							<dict>
+								<key>name</key>
+								<string>keyword.asciidoc</string>
+							</dict>
+							<key>2</key>
+							<dict>
+								<key>name</key>
+								<string>constant.character.asciidoc</string>
+							</dict>
+							<key>3</key>
+							<dict>
+								<key>name</key>
+								<string>string.asciidoc</string>
+							</dict>
+							<key>4</key>
+							<dict>
+								<key>name</key>
+								<string>constant.character.asciidoc</string>
+							</dict>
+						</dict>
 						<key>patterns</key>
 						<array>
 							<dict>
-								<key>begin</key>
-								<string>(\[)</string>
-								<key>beginCaptures</key>
-								<dict>
-									<key>1</key>
-									<dict>
-										<key>name</key>
-										<string>keyword.operator</string>
-									</dict>
-								</dict>
-								<key>contentName</key>
-								<string>variable.parameter meta.path</string>
-								<key>end</key>
-								<string>(\]\s*$)</string>
-								<key>endCaptures</key>
-								<dict>
-									<key>1</key>
-									<dict>
-										<key>name</key>
-										<string>keyword.operator</string>
-									</dict>
-								</dict>
-							</dict>
-							<dict>
-								<key>match</key>
-								<string>(.+?)</string>
-								<key>name</key>
-								<string>keyword filename string</string>
+								<key>include</key>
+								<string>#block_attrlist</string>
 							</dict>
 						</array>
+						<key>end</key>
+						<string>(\]\s*$)</string>
+						<key>endCaptures</key>
+						<dict>
+							<key>1</key>
+							<dict>
+								<key>name</key>
+								<string>constant.character.asciidoc</string>
+							</dict>
+						</dict>
 					</dict>
 				</array>
-				<key>end</key>
-				<string>($)</string>
-				<key>endCaptures</key>
-				<dict>
-					<key>1</key>
+			</dict>
+			<key>inline_attrlist</key>
+			<dict>
+				<key>patterns</key>
+				<array>
 					<dict>
-						<key>name</key>
-						<string>keyword.mysample</string>
+						<key>include</key>
+						<string>#attrlist</string>
 					</dict>
-				</dict>
+				</array>
+			</dict>
+			<key>inline_macro</key>
+			<dict>
+				<key>patterns</key>
+				<array>
+					<dict>
+						<key>begin</key>
+						<string>(image|icon)(:)([^\x{003a}]{1}.*?)(\[)</string>
+						<key>beginCaptures</key>
+						<dict>
+							<key>1</key>
+							<dict>
+								<key>name</key>
+								<string>keyword.asciidoc</string>
+							</dict>
+							<key>2</key>
+							<dict>
+								<key>name</key>
+								<string>constant.character.asciidoc</string>
+							</dict>
+							<key>3</key>
+							<dict>
+								<key>name</key>
+								<string>string.asciidoc</string>
+							</dict>
+							<key>4</key>
+							<dict>
+								<key>name</key>
+								<string>constant.character.asciidoc</string>
+							</dict>
+						</dict>
+						<key>patterns</key>
+						<array>
+							<dict>
+								<key>include</key>
+								<string>#inline_attrlist</string>
+							</dict>
+						</array>
+						<key>end</key>
+						<string>(\])</string>
+						<key>endCaptures</key>
+						<dict>
+							<key>1</key>
+							<dict>
+								<key>name</key>
+								<string>constant.character.asciidoc</string>
+							</dict>
+						</dict>
+					</dict>
+				</array>
+			</dict>
+			<key>strings</key>
+			<dict>
+				<key>patterns</key>
+				<array>
+					<dict>
+						<key>begin</key>
+						<string>(&quot;)</string>
+						<key>beginCaptures</key>
+						<dict>
+							<key>1</key>
+							<dict>
+								<key>name</key>
+								<string>constant.character.asciidoc</string>
+							</dict>
+						</dict>
+						<key>patterns</key>
+						<array>
+							<dict>
+								<key>include</key>
+								<string>#strings__1</string>
+							</dict>
+						</array>
+						<key>end</key>
+						<string>(&quot;)</string>
+						<key>endCaptures</key>
+						<dict>
+							<key>1</key>
+							<dict>
+								<key>name</key>
+								<string>constant.character.asciidoc</string>
+							</dict>
+						</dict>
+					</dict>
+				</array>
+			</dict>
+			<key>strings__1</key>
+			<dict>
+				<key>patterns</key>
+				<array>
+					<dict>
+						<key>match</key>
+						<string>(\\(?:\\|&quot;))</string>
+						<key>name</key>
+						<string>string.asciidoc</string>
+					</dict>
+					<dict>
+						<key>match</key>
+						<string>([^\x{0022}\x{005c}]+)</string>
+						<key>name</key>
+						<string>string.asciidoc</string>
+					</dict>
+				</array>
 			</dict>
 
 

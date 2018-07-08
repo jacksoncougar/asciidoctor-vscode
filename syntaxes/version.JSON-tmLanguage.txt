@@ -1,0 +1,206 @@
+#################################################################
+## Iro
+################################################################ 
+##
+## * Press Ctrl + '+'/'-' To Zoom in
+## * Press Ctrl + S to save and recalculate... 
+## * Documents are saved to web storage.
+## * Only one save slot supported.
+## * Matches cannot span lines.
+## * Unicode chars must be defined in \u0000 to \uffff format.
+## * All matches must be contained by a single group ( ... )
+## * Look behinds not permitted, (?<= or (?<!
+## * Look forwards are permitted (?= or (?!
+## * Constants are defined as __my_const = (......)
+## * The \= format allows unescaped regular expressions
+## * Constants referenced by match \= $${__my_const}
+## * Constants can reference other constants
+## * You are free to delete all the default scopes.
+## * Twitter : ainslec , Web: http://eeyo.io/iro
+##
+################################################################
+
+name                   = asciidoc
+file_extensions []     = adoc, ad, asciidoc;
+
+################################################################
+## Constants
+################################################################
+
+__MY_CONSTANT \= (\b[a-z][a-z0-9]*)
+
+################################################################
+## Styles
+################################################################
+
+styles [] {
+
+.comment : style {
+   color                 = light_green
+   italic                = true
+   ace_scope             = comment
+   textmate_scope        = comment
+   pygments_scope        = Comment
+}
+
+.keyword : style {
+   color     = cyan
+   ace_scope             = keyword
+   textmate_scope        = keyword
+   pygments_scope        = Keyword
+}
+
+.imageblock : style {
+   color     = green
+   ace_scope             = keyword
+   textmate_scope        = keyword
+   pygments_scope        = Keyword
+}
+
+.alttext : style {
+   color     = red
+   ace_scope             = keyword
+   textmate_scope        = text
+   pygments_scope        = Keyword
+}
+
+.path : style {
+   color     = cyan
+   ace_scope             = keyword
+   textmate_scope        = text
+   pygments_scope        = Keyword
+}
+
+.numeric : style {
+   color                 = gold
+   ace_scope             = constant.numeric
+   textmate_scope        = constant.numeric
+   pygments_scope        = Number
+}
+
+.punctuation : style {
+   color     = red_2
+   ace_scope             = punctuation
+   textmate_scope        = constant.character
+   pygments_scope        = Punctuation
+}
+
+.text : style {
+   color                 = brown
+   ace_scope             = text
+   textmate_scope        = string 
+   pygments_scope        = String
+}
+
+.illegal : style {
+   color                 = white
+   background_color      = red
+   ace_scope             = invalid
+   textmate_scope        = invalid
+   pygments_scope        = Generic.Error
+}
+
+}
+
+__macros = image|icon
+
+#################################################
+## Parse contexts
+#################################################
+
+contexts [] {
+
+##############################################
+## Main Context - Entry point context
+##############################################
+
+main : context {
+  
+   : include "inline_macro";
+   : include "block_macro";
+}
+
+block_macro : context {
+      : push {
+      uid            = uid_block_macro
+      regex          \=  (^$${__macros})(::)([^:]{1}.*?)(\[)(?=.*?\]\s*$)
+      styles []       = .keyword, .punctuation, .text, .punctuation;
+      context[]       = block_attrlist;
+   }
+}
+
+attrlist : context {
+   : pattern {
+      regex      \= (\\(?:\\|\]))
+      styles [] = .keyword;
+   }
+   : pattern {
+      regex      \= (=)
+      styles [] = .keyword;
+   }
+   : pattern {
+      regex      \= (,)
+      styles [] = .keyword;
+   }
+   
+   : include "strings";
+}
+
+block_macro_1 : context {
+   : pop { 
+      regex         \= (\]\s*$)
+      styles []      = .punctuation;
+   }
+   
+   : include "attrlist";
+}
+
+inline_attrlist : context {
+   : pop { 
+      regex         \= (\])
+      styles []      = .punctuation;
+   }
+   
+   : include "attrlist";
+}
+
+block_attrlist : context {
+   : pop { 
+      regex         \= (\]\s*$)
+      styles []      = .punctuation;
+   }
+   
+   : include "attrlist";
+}
+
+
+inline_macro : context {
+   : push {
+      uid            = uid_inline_macro
+      regex          \= ($${__macros})(:)([^:]{1}.*?)(\[)
+      styles []       = .keyword, .punctuation, .text, .punctuation;
+      context[]       = inline_attrlist;
+   }
+}
+
+strings : context {
+   : inline_push {
+      regex         \= (")
+      styles []      = .punctuation;
+      
+      : pop { 
+         regex         \= (")
+         styles []      = .punctuation;
+      }
+      : pattern {
+         regex      \= (\\(?:\\|"))
+         styles [] = .text;
+      }
+      : pattern {
+         regex      \= ([^"\\]+)
+         styles [] = .text;
+      } 
+   }
+}
+   
+}
