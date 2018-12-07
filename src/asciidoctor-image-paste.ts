@@ -1,9 +1,12 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
-import { EWOULDBLOCK } from 'constants';
+import { EWOULDBLOCK, defaultCipherList } from 'constants';
 import { Range } from 'vscode';
 import { start } from 'repl';
+import { Z_NO_COMPRESSION } from 'zlib';
+import { ChildProcess, spawn, exec, spawnSync, execSync } from 'child_process'
+import * as moment from 'moment'
 
 export namespace Import
 {
@@ -45,17 +48,43 @@ export namespace Import
     };
 
 
-
-
     export class Image
     {
+        static saveImageFromClipboard(filename: string): boolean
+        {
+            const script = 'C:\\Users\\seed\\Documents\\asciidoctor-vscode\\res\\pc.ps1';
+
+            let child = spawn("powershell.exe",
+                [`${script}`, `'${filename}'`],
+                {
+                    cwd: process.cwd(),
+                    env: process.env,
+                });
+
+            child.stdout.on("data", function (data)
+            {
+                console.log("Powershell Data: " + data);
+            });
+            child.stderr.on("data", function (data)
+            {
+                console.log("Powershell Errors: " + data);
+            });
+            child.on("exit", function ()
+            {
+                console.log("Powershell Script finished");
+            });
+            child.stdin.end();
+
+            return 0 == 0;
+        }
+
         static ImportFromClipboard(config: Configuration)
         {
             config = config || new Configuration();
 
             const editor = vscode.window.activeTextEditor;
 
-            let filename = '' //todo: default filename
+            let filename = moment().format("d-M-YYYY-HH-mm-ss-A.jpg").toString() //todo: default filename
             let alttext = ''; //todo:...
             let directory = this.get_current_imagesdir();
 
@@ -63,15 +92,19 @@ export namespace Import
             let uri = vscode.Uri.parse(directory);
             if (uri.authority) return;
 
+
             const selectedText = editor.document.getText(editor.selection);
-            switch (config.selectionRole)
+            if (!editor.selection.isEmpty)
             {
-                case SelectionRole.AltText:
-                    alttext = selectedText;
-                    break;
-                case SelectionRole.Filename:
-                    filename = selectedText;
-                    break;
+                switch (config.selectionRole)
+                {
+                    case SelectionRole.AltText:
+                        alttext = selectedText;
+                        break;
+                    case SelectionRole.Filename:
+                        filename = selectedText;
+                        break;
+                }
             }
 
             switch (config.encoding)
@@ -80,6 +113,9 @@ export namespace Import
                     filename = encodeURIComponent(filename);
                     break;
             }
+
+            if (!this.saveImageFromClipboard(`C:\\Users\\seed\\Documents\\jacksoncougar.github.io\\images\\${filename}`))
+            return;
 
             const affectedLines = new vscode.Range(
                 editor.selection.start.line,

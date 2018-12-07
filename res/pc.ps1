@@ -27,13 +27,15 @@ param($imagePath)
 Add-Type -Assembly PresentationCore
 $img = [Windows.Clipboard]::GetImage()
 
+echo "whats this"
+
 if ($img -eq $null) {
     "no image"
-    Exit 1
+    Exit 2
 }
 
 if (-not $imagePath) {
-    "no image"
+    "no image path"
     Exit 1
 }
 
