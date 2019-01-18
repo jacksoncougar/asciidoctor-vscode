@@ -68,7 +68,7 @@ export class AsciiDocParser {
                 attributes = { 'copycss': true, 'stylesdir': stylesdir, 'stylesheet': 'asciidoctor.css' }
             const options = {
                 safe: 'unsafe',
-                doctype: 'article',
+                doctype: 'inline',
                 attributes: attributes,
                 header_footer: true,
                 to_file: false,
