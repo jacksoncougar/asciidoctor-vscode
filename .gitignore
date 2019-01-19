@@ -3,3 +3,6 @@ node_modules/
 *.vsix
 .asciidoctor/
 test/samples/*.pdf
+media/*.js
+package-lock.json
+test/samples/playground.*

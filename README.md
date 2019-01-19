@@ -28,8 +28,9 @@ If you want to use the Ruby version of [**Asciidoctor**](http://asciidoctor.org/
 
 ## How to build and install from source (Linux)
 
+### Manual build
 ```bash
-git clone https://github.com/joaompinto/asciidoctor-vscode
+git clone https://github.com/asciidoctor/asciidoctor-vscode
 cd asciidoctor-vscode
 npm install
 sudo npm install -g vsce typescript
@@ -37,18 +38,30 @@ vsce package
 code --install-extension *.vsix
 ```
 
+### Build script
+```bash
+git clone https://github.com/asciidoctor/asciidoctor-vscode
+bash ./script/build build install
+```
+The build script accepts other commands too, run `bash ./script/build help` for more information.
+
 ## Contributors
 
 ```git log --pretty="%an" | sort -u```
 
-    art Sokol
-    chriskoerner
+    Bart Sokol
     Daniel Mulholland
     Garrett D'Amore
     Gigacee
+    Jackson C. Wiebe
     João Pinto
     Kevin Palmowski
     Marcelo Alvim
     Mark Roszko
-    Øyvind Hansen
+    MatteoCampinoti94
+    Stephen Pegoraro
     Tatsunori Uchino
+    chriskoerner
+    ojn
+    sgn
+    Øyvind Hansen
