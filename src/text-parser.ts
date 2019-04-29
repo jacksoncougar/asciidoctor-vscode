@@ -9,10 +9,11 @@ const fileUrl = require('file-url');
 const Viz = require("viz.js");
 var which = npm_which(__dirname) // __dirname often good enough
 
-let previousHtml = null;
-let use_asciidoctor_js = vscode.workspace.getConfiguration('AsciiDoc').get('use_asciidoctor_js');
 const asciidoctor = Asciidoctor();
 
+
+const plantuml = require('asciidoctor-plantuml');
+plantuml.register(asciidoctor.Extensions);
 
 asciidoctor.Extensions.register(function () {
     this.block(function () {
@@ -25,6 +26,7 @@ asciidoctor.Extensions.register(function () {
         });
     });
 });
+
 
 asciidoctor.Extensions.register(function () {
     this.block(function () {
@@ -43,65 +45,78 @@ export class AsciiDocParser {
     public html: string = '';
     public document = null;
 
-    constructor(private readonly filename: string, private readonly text: string) {
+    constructor(private readonly filename: string) {
     }
 
     public getAttribute(name: string) {
         return isNullOrUndefined(this.document) ? null : this.document.getAttribute(name);
     }
 
-    public async getMediaDir() {
-        const match = this.text.match(new RegExp("^\\s*:mediadir:"));
+    public async getMediaDir(text) {
+        const match = text.match(new RegExp("^\\s*:mediadir:"));
         return match;
     }
 
-    private async convert_using_javascript() {
+    private async convert_using_javascript(text: string) {
         return new Promise<string>(resolve => {
-            const contains_stylesheet = !isNullOrUndefined(this.text.match(new RegExp("^\\s*:stylesheet:", "img")));
-            const documentPath = path.dirname(this.filename);
+            const editor = vscode.window.activeTextEditor;
+            const doc = editor.document;
+            const contains_stylesheet = !isNullOrUndefined(text.match(new RegExp("^\\s*:stylesheet:", "img")));
+            const use_default_stylesheet = vscode.workspace.getConfiguration('asciidoc').get('useDefaultStylesheet', false);
+            const documentPath = path.dirname(path.resolve(doc.fileName));
             const ext_path = vscode.extensions.getExtension('joaompinto.asciidoctor-vscode').extensionPath;
             const stylesdir = path.join(ext_path, 'assets')
             var attributes = {};
-            if (contains_stylesheet)
+            if (contains_stylesheet || use_default_stylesheet)
                 attributes = { 'copycss': true }
             else
                 attributes = { 'copycss': true, 'stylesdir': stylesdir, 'stylesheet': 'asciidoctor.css' }
             const options = {
                 safe: 'unsafe',
-                doctype: 'article',
+                doctype: 'inline',
                 attributes: attributes,
                 header_footer: true,
                 to_file: false,
                 base_dir: documentPath,
                 sourcemap: true,
             }
-            let ascii_doc = asciidoctor.load(this.text, options);
+            let ascii_doc = asciidoctor.load(text, options);
             this.document = ascii_doc;
             const blocksWithLineNumber = ascii_doc.findBy(function (b) { return typeof b.getLineNumber() !== 'undefined'; });
             blocksWithLineNumber.forEach(function (block, key, myArray) {
                 block.addRole("data-line-" + block.getLineNumber());
             })
             let resultHTML = ascii_doc.convert(options);
-            let result = this.fixLinks(resultHTML);
-            resolve(result);
+            //let result = this.fixLinks(resultHTML);
+            resolve(resultHTML);
         })
     }
 
-    private async convert_using_application() {
-        let documentPath = path.dirname(this.filename);
+    private async convert_using_application(text: string) {
+        const editor = vscode.window.activeTextEditor;
+        const doc = editor.document;
+        const documentPath = path.dirname(this.filename).replace('"', '\\"');
         this.document = null;
 
         return new Promise<string>(resolve => {
-            let asciidoctor_command = vscode.workspace.getConfiguration('AsciiDoc').get('asciidoctor_command', 'asciidoctor');
+            let asciidoctor_command = vscode.workspace.getConfiguration('asciidoc').get('asciidoctor_command', 'asciidoctor');
             var options = { shell: true, cwd: path.dirname(this.filename) }
-            var asciidoctor = spawn(asciidoctor_command, ['-q', '-o-', '-', '-B', '\'' + documentPath + '\''], options);
+
+            var adoc_cmd_array = asciidoctor_command.split(/(\s+)/).filter( function(e) { return e.trim().length > 0; } ) ;
+            var adoc_cmd = adoc_cmd_array[0]
+            var adoc_cmd_args = adoc_cmd_array.slice(1)
+            adoc_cmd_args.push.apply(adoc_cmd_args, ['-q', '-o-', '-', '-B', '"' + documentPath + '"'])
+            var asciidoctor = spawn(adoc_cmd, adoc_cmd_args, options);
+
             asciidoctor.stderr.on('data', (data) => {
                 let errorMessage = data.toString();
                 console.error(errorMessage);
                 errorMessage += errorMessage.replace("\n", '<br><br>');
                 errorMessage += "<br><br>"
+                errorMessage += "<b>command:</b> " + adoc_cmd + " " + adoc_cmd_args.join(" ")
+                errorMessage += "<br><br>"
                 errorMessage += "<b>If the asciidoctor binary is not in your PATH, you can set the full path.<br>"
-                errorMessage += "Go to `File -> Preferences -> User settings` and adjust the AsciiDoc.asciidoctor_command</b>"
+                errorMessage += "Go to `File -> Preferences -> User settings` and adjust the asciidoc.asciidoctor_command</b>"
                 resolve(errorMessage);
             })
             var result_data = ''
@@ -110,10 +125,10 @@ export class AsciiDocParser {
                 result_data += data.toString();
             });
             asciidoctor.on('close', (code) => {
-                var result = this.fixLinks(result_data);
-                resolve(result);
+                //var result = this.fixLinks(result_data);
+                resolve(result_data);
             })
-            asciidoctor.stdin.write(this.text);
+            asciidoctor.stdin.write(text);
             asciidoctor.stdin.end();
         });
     }
@@ -135,13 +150,12 @@ export class AsciiDocParser {
         return result;
     }
 
-    public async parseText(): Promise<string> {
+    public async parseText(text: string): Promise<string> {
+        const use_asciidoctor_js = vscode.workspace.getConfiguration('asciidoc').get('use_asciidoctor_js');
         if (use_asciidoctor_js)
-            return this.convert_using_javascript()
+            return this.convert_using_javascript(text)
         else
-            return this.convert_using_application()
+            return this.convert_using_application(text)
     }
 
 }
-
-

@@ -1,10 +1,4 @@
 import * as vscode from 'vscode';
-import * as fs from 'fs';
-import * as path from 'path';
-import { EWOULDBLOCK, defaultCipherList } from 'constants';
-import { Range } from 'vscode';
-import { start } from 'repl';
-import { Z_NO_COMPRESSION } from 'zlib';
 import { ChildProcess, spawn, exec, spawnSync, execSync } from 'child_process'
 import * as moment from 'moment'
 

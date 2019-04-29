@@ -76,6 +76,7 @@ export default class TextDocumentContentProvider implements vscode.TextDocumentC
           <head>
             <script src="${ext_path + "/assets/scroll-to-element.js"}"></script>
             <script src="${ext_path + "/assets/mermaid.min.js"}"></script>
+            <link rel="stylesheet" type="text/css" href=${ext_path + "/assets/asciidoctor.css"}/>
             <script>mermaid.initialize({startOnLoad:true});</script>
             <style>
             body { padding: 0; margin: 0; }
