@@ -52,30 +52,38 @@ export namespace Import
     {
         static saveImageFromClipboard(filename: string): boolean
         {
-            const script = 'C:\\Users\\seed\\Documents\\asciidoctor-vscode\\res\\pc.ps1';
+            const script = path.join(__dirname, '../../res\\pc.ps1');
 
-            let child = spawn("powershell.exe",
-                [`${script}`, `'${filename}'`],
-                {
-                    cwd: process.cwd(),
-                    env: process.env,
-                });
+            console.log(process.cwd())
 
-            child.stdout.on("data", function (data)
-            {
-                console.log("Powershell Data: " + data);
-            });
-            child.stderr.on("data", function (data)
-            {
-                console.log("Powershell Errors: " + data);
-            });
-            child.on("exit", function ()
-            {
-                console.log("Powershell Script finished");
-            });
-            child.stdin.end();
+            let child = spawnSync("powershell",
+                [
+                    '-noprofile',
+                    '-noninteractive',
+                    '-nologo',
+                    '-sta',
+                    '-executionpolicy', 'unrestricted',
+                    '-windowstyle', 'hidden',
+                    '-file', `${script}`,
+                    `'${filename}'`
+                ]);
+            /*
+                        child.stdout.on("data", function (data)
+                        {
+                            console.log("Powershell Data: " + data);
+                        });
+                        child.stderr.on("data", function (data)
+                        {
+                            console.log("Powershell Errors: " + data);
+                        });
+                        child.on("exit", function ()
+                        {
+                            console.log("Powershell Script finished");
+                        });
+                        child.stdin.end();
+                        */
 
-            return 0 == 0;
+            return child.status == 0;
         }
 
         static ImportFromClipboard(config: Configuration)
@@ -115,7 +123,7 @@ export namespace Import
             }
 
             if (!this.saveImageFromClipboard(`C:\\Users\\seed\\Documents\\jacksoncougar.github.io\\images\\${filename}`))
-            return;
+                return;
 
             const affectedLines = new vscode.Range(
                 editor.selection.start.line,
