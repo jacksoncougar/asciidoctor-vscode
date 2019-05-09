@@ -136,7 +136,7 @@ export class Paster {
    * @param document Document where selected text occurs.
    * @param selection Selection
    */
-    public static is_inline_selection(
+  public static is_inline_selection(
     document: vscode.TextDocument,
     selection: vscode.Selection
   ): boolean {
@@ -232,7 +232,7 @@ export class Paster {
       this.defaultNameConfig,
       projectPath,
       filePath,
-      x => `[${x}]`
+      (x) => `[${x}]`
     );
     this.folderPathConfig = this.replacePathVariable(
       this.folderPathConfig,
@@ -282,7 +282,7 @@ export class Paster {
           `File ${imagePath} exists. Would you want to replace?`,
           'Replace',
           'Cancel'
-        ).then(choice => {
+        ).then((choice) => {
           if (choice == 'Cancel') return;
           else {
             this.saveAndPaste(editor, imagePath);
@@ -301,7 +301,7 @@ export class Paster {
 
   public static saveAndPaste(editor: vscode.TextEditor, imagePath) {
     this.createImageDirWithImagePath(imagePath)
-      .then(imagePath => {
+      .then((imagePath) => {
         // save image and insert to current edit file
         this.saveClipboardImageToFileAndGetPath(
           imagePath,
@@ -323,7 +323,7 @@ export class Paster {
               this.suffixConfig
             );
 
-            editor.edit(edit => {
+            editor.edit((edit) => {
               let current = editor.selection;
 
               if (current.isEmpty) {
@@ -335,7 +335,7 @@ export class Paster {
           }
         );
       })
-      .catch(err => {
+      .catch((err) => {
         if (err instanceof PluginError) {
           Logger.showErrorMessage(err.message);
         } else {
@@ -396,7 +396,7 @@ export class Paster {
             );
           }
         } else if (err.code == 'ENOENT') {
-          fse.ensureDir(imageDir, err => {
+          fse.ensureDir(imageDir, (err) => {
             if (err) {
               reject(err);
               return;
@@ -571,7 +571,7 @@ export class Paster {
     pathStr: string,
     projectRoot: string,
     curFilePath: string,
-    postFunction: (string) => string = x => x
+    postFunction: (string) => string = (x) => x
   ): string {
     let currentFileDir = path.dirname(curFilePath);
     let ext = path.extname(curFilePath);

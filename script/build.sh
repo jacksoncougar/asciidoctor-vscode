@@ -47,13 +47,14 @@ exitdialog() {
 # Generate plist syntax
 generate_syntax() {
   echo "==> Converting YAML syntax to plist"
-  [[ ! -x script/yaml-to-plist ]] && chmod +x script/yaml-to-plist
-  script/yaml-to-plist "syntaxes/Asciidoctor.YAML-tmLanguage" "syntaxes/Asciidoctor.tmLanguage" || exitdialog $?
+  [[ ! -x script/yaml-to-plist.py ]] && chmod +x script/yaml-to-plist
+  script/yaml-to-plist.py "syntaxes/Asciidoctor.YAML-tmLanguage" "syntaxes/Asciidoctor.tmLanguage" || exitdialog $?
 }
 
 # Install node dependencies
 npm_local_deps() {
   echo "==> Installing local dependencies"
+  rm -f package-lock.json
   npm install || exitdialog $?
 }
 
@@ -72,6 +73,7 @@ npm_global_deps() {
 package() {
   echo "==> Packaging extension"
   rm -f *.vsix
+  rm -rf out/
   vsce package || exitdialog
 }
 
@@ -83,7 +85,7 @@ install() {
 
 
 # Move to project root
-cd "$(dirname "$0")/.."
+cd "$(dirname "$(readlink -fn "$0")")"/..
 
 # Run help() if -h or --help or help have been used as argument
 [[ -z $@ || $1 =~ (-h|--help|help) ]] && help && exit

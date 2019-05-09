@@ -5,13 +5,13 @@
 
 import * as vscode from 'vscode';
 
-import { MarkdownPreviewManager } from './features/previewManager';
+import { AsciidocPreviewManager } from './features/previewManager';
 
 import * as nls from 'vscode-nls';
 
 const localize = nls.loadMessageBundle();
 
-export const enum MarkdownPreviewSecurityLevel {
+export const enum AsciidocPreviewSecurityLevel {
 	Strict = 0,
 	AllowInsecureContent = 1,
 	AllowScriptsAndAllContent = 2,
@@ -19,9 +19,9 @@ export const enum MarkdownPreviewSecurityLevel {
 }
 
 export interface ContentSecurityPolicyArbiter {
-	getSecurityLevelForResource(resource: vscode.Uri): MarkdownPreviewSecurityLevel;
+	getSecurityLevelForResource(resource: vscode.Uri): AsciidocPreviewSecurityLevel;
 
-	setSecurityLevelForResource(resource: vscode.Uri, level: MarkdownPreviewSecurityLevel): Thenable<void>;
+	setSecurityLevelForResource(resource: vscode.Uri, level: AsciidocPreviewSecurityLevel): Thenable<void>;
 
 	shouldAllowSvgsForResource(resource: vscode.Uri): void;
 
@@ -40,27 +40,27 @@ export class ExtensionContentSecurityPolicyArbiter implements ContentSecurityPol
 		private readonly workspaceState: vscode.Memento
 	) { }
 
-	public getSecurityLevelForResource(resource: vscode.Uri): MarkdownPreviewSecurityLevel {
+	public getSecurityLevelForResource(resource: vscode.Uri): AsciidocPreviewSecurityLevel {
 		// Use new security level setting first
-		const level = this.globalState.get<MarkdownPreviewSecurityLevel | undefined>(this.security_level_key + this.getRoot(resource), undefined);
+		const level = this.globalState.get<AsciidocPreviewSecurityLevel | undefined>(this.security_level_key + this.getRoot(resource), undefined);
 		if (typeof level !== 'undefined') {
 			return level;
 		}
 
 		// Fallback to old trusted workspace setting
 		if (this.globalState.get<boolean>(this.old_trusted_workspace_key + this.getRoot(resource), false)) {
-			return MarkdownPreviewSecurityLevel.AllowScriptsAndAllContent;
+			return AsciidocPreviewSecurityLevel.AllowScriptsAndAllContent;
 		}
-		return MarkdownPreviewSecurityLevel.Strict;
+		return AsciidocPreviewSecurityLevel.Strict;
 	}
 
-	public setSecurityLevelForResource(resource: vscode.Uri, level: MarkdownPreviewSecurityLevel): Thenable<void> {
+	public setSecurityLevelForResource(resource: vscode.Uri, level: AsciidocPreviewSecurityLevel): Thenable<void> {
 		return this.globalState.update(this.security_level_key + this.getRoot(resource), level);
 	}
 
 	public shouldAllowSvgsForResource(resource: vscode.Uri) {
 		const securityLevel = this.getSecurityLevelForResource(resource);
-		return securityLevel === MarkdownPreviewSecurityLevel.AllowInsecureContent || securityLevel === MarkdownPreviewSecurityLevel.AllowScriptsAndAllContent;
+		return securityLevel === AsciidocPreviewSecurityLevel.AllowInsecureContent || securityLevel === AsciidocPreviewSecurityLevel.AllowScriptsAndAllContent;
 	}
 
 	public shouldDisableSecurityWarnings(): boolean {
@@ -91,12 +91,12 @@ export class PreviewSecuritySelector {
 
 	public constructor(
 		private readonly cspArbiter: ContentSecurityPolicyArbiter,
-		private readonly webviewManager: MarkdownPreviewManager
+		private readonly webviewManager: AsciidocPreviewManager
 	) { }
 
 	public async showSecutitySelectorForResource(resource: vscode.Uri): Promise<void> {
 		interface PreviewSecurityPickItem extends vscode.QuickPickItem {
-			readonly type: 'moreinfo' | 'toggle' | MarkdownPreviewSecurityLevel;
+			readonly type: 'moreinfo' | 'toggle' | AsciidocPreviewSecurityLevel;
 		}
 
 		function markActiveWhen(when: boolean): string {
@@ -107,20 +107,20 @@ export class PreviewSecuritySelector {
 		const selection = await vscode.window.showQuickPick<PreviewSecurityPickItem>(
 			[
 				{
-					type: MarkdownPreviewSecurityLevel.Strict,
-					label: markActiveWhen(currentSecurityLevel === MarkdownPreviewSecurityLevel.Strict) + localize('strict.title', 'Strict'),
+					type: AsciidocPreviewSecurityLevel.Strict,
+					label: markActiveWhen(currentSecurityLevel === AsciidocPreviewSecurityLevel.Strict) + localize('strict.title', 'Strict'),
 					description: localize('strict.description', 'Only load secure content'),
 				}, {
-					type: MarkdownPreviewSecurityLevel.AllowInsecureLocalContent,
-					label: markActiveWhen(currentSecurityLevel === MarkdownPreviewSecurityLevel.AllowInsecureLocalContent) + localize('insecureLocalContent.title', 'Allow insecure local content'),
+					type: AsciidocPreviewSecurityLevel.AllowInsecureLocalContent,
+					label: markActiveWhen(currentSecurityLevel === AsciidocPreviewSecurityLevel.AllowInsecureLocalContent) + localize('insecureLocalContent.title', 'Allow insecure local content'),
 					description: localize('insecureLocalContent.description', 'Enable loading content over http served from localhost'),
 				}, {
-					type: MarkdownPreviewSecurityLevel.AllowInsecureContent,
-					label: markActiveWhen(currentSecurityLevel === MarkdownPreviewSecurityLevel.AllowInsecureContent) + localize('insecureContent.title', 'Allow insecure content'),
+					type: AsciidocPreviewSecurityLevel.AllowInsecureContent,
+					label: markActiveWhen(currentSecurityLevel === AsciidocPreviewSecurityLevel.AllowInsecureContent) + localize('insecureContent.title', 'Allow insecure content'),
 					description: localize('insecureContent.description', 'Enable loading content over http'),
 				}, {
-					type: MarkdownPreviewSecurityLevel.AllowScriptsAndAllContent,
-					label: markActiveWhen(currentSecurityLevel === MarkdownPreviewSecurityLevel.AllowScriptsAndAllContent) + localize('disable.title', 'Disable'),
+					type: AsciidocPreviewSecurityLevel.AllowScriptsAndAllContent,
+					label: markActiveWhen(currentSecurityLevel === AsciidocPreviewSecurityLevel.AllowScriptsAndAllContent) + localize('disable.title', 'Disable'),
 					description: localize('disable.description', 'Allow all content and script execution. Not recommended'),
 				}, {
 					type: 'moreinfo',
@@ -136,7 +136,7 @@ export class PreviewSecuritySelector {
 			], {
 				placeHolder: localize(
 					'preview.showPreviewSecuritySelector.title',
-					'Select security settings for Markdown previews in this workspace'),
+					'Select security settings for Asciidoc previews in this workspace'),
 			});
 		if (!selection) {
 			return;

@@ -6,9 +6,9 @@ import * as zlib from 'zlib';
 import { https } from 'follow-redirects'
 import { isNullOrUndefined } from 'util'
 import { spawn } from "child_process";
-import { AsciiDocParser } from '../text-parser';
+import { AsciidocParser } from '../text-parser';
 import { Command } from '../commandManager';
-import { MarkdownEngine } from '../markdownEngine';
+import { AsciidocEngine } from '../asciidocEngine';
 import * as tmp from "tmp";
 
 var HttpsProxyAgent = require('https-proxy-agent');
@@ -18,7 +18,7 @@ export class ExportAsPDF implements Command {
     public readonly id = 'asciidoc.exportAsPDF';
 
 	constructor(
-		private readonly engine: MarkdownEngine
+		private readonly engine: AsciidocEngine
 	) { }
 
     public async execute() {
@@ -85,7 +85,7 @@ export class ExportAsPDF implements Command {
             asciidoctorpdf.stdin.write(text)
             asciidoctorpdf.stdin.end()
         } else {
-            let parser = new AsciiDocParser(path.resolve(doc.fileName))
+            let parser = new AsciidocParser(path.resolve(doc.fileName))
             //const body =  await parser.parseText()
             const body = await this.engine.render(doc.uri, true, text)
             const ext_path = vscode.extensions.getExtension('joaompinto.asciidoctor-vscode').extensionPath;

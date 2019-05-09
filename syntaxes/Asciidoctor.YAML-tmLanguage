@@ -1449,6 +1449,7 @@ repository:
     patterns:
     - include: '#typographic_quotes_single'
     - include: '#typographic_quotes_double'
+    - include: '#typographic_quotes_single_close'
     - include: '#passthrough'
     - include: '#strong_double'
     - include: '#emphasis_double'
@@ -1474,7 +1475,7 @@ repository:
       (?x)
       (\[[^\]]*?\])?         # might be preceded by an attributes list
       (?<=^|\W)(?<!\\|})     # must be preceded by nonword character, and not by escape or } (attribute)
-      ('`)(?=\S[\S ]*\S`'\W) # must be followed by inline characters and closed
+      ('`)(?=(\S+|\S[\S ]*\S)`'\W) # must be followed by inline characters and closed
     beginCaptures:
       '1': {name: support.variable.attributelist.asciidoc}
       '2': {name: punctuation.definition.typographic-quotes.single.begin.asciidoc}
@@ -1511,7 +1512,7 @@ repository:
       (?x)
       (\[[^\]]*?\])?         # might be preceded by an attributes list
       (?<=^|\W)(?<!\\|})     # must be preceded by nonword character, and not by escape or } (attribute)
-      ("`)(?=\S[\S ]*\S`"\W) # must be followed by inline characters and closed
+      ("`)(?=(\S+|\S[\S ]*\S)`"\W) # must be followed by inline characters and closed
     beginCaptures:
       '1': {name: support.variable.attributelist.asciidoc}
       '2': {name: punctuation.definition.typographic-quotes.double.begin.asciidoc}
@@ -1535,6 +1536,21 @@ repository:
     - include: '#superscript'
     - include: '#subscript'
     - include: '#mail'
+
+  typographic_quotes_single_close:
+    comment: |
+      Closing single typographic quote.
+
+      Examples:
+        Text
+    name: markup.italic.quote.typographic-quotes.single.asciidoc
+    match: |-
+      (?x)
+      (\[[^\]]*?\])?              # might be preceded by an attributes list
+      (?<=^|[^\w\\}])             # must be preceded by nonword character, and not by escape, } (attribute)
+      (`')(?!(( )?[^`\s])*`[^\w"']) # must not be closed by a constrained literal (`)
+    captures:
+      '1': {name: punctuation.definition.typographic-quotes.single.end.asciidoc}
 
   strong_double:
     comment: |
@@ -1707,7 +1723,7 @@ repository:
       (?x)
       (\[[^\]]*?\])?         # might start with an attributes list
       (?<=^|\W)(?<!\\|})     # must be preceded by nonword character, and not by escape or } (attribute)
-      (\*)(?=\S[\S ]*\S\*\W) # must be followed by inline characters and closed
+      (\*)(?=(\S+|\S[\S ]*\S)\*\W) # must be followed by inline characters and closed
     beginCaptures:
       '1': {name: support.variable.attributelist.asciidoc}
       '2': {name: punctuation.definition.bold.single.begin.asciidoc}
@@ -1744,7 +1760,7 @@ repository:
       (?x)
       (\[[^\]]*?\])?       # might be preceded by an attributes list
       (?<=^|\W)(?<!\\|})   # must be preceded by nonword character, and not by escape or } (attribute)
-      (_)(?=\S[\S ]*\S_\W) # must be followed by inline characters and closed
+      (_)(?=(\S+|\S[\S ]*\S)_\W) # must be followed by inline characters and closed
     beginCaptures:
       '1': {name: support.variable.attributelist.asciidoc}
       '2': {name: punctuation.definition.italic.single.begin.asciidoc}
@@ -1779,16 +1795,16 @@ repository:
     contentName: meta.literalinner.single.asciidoc
     begin: |-
       (?x)
-      (\[[^\]]*?\])?       # might start with attributes list
-      (?<=^|\W)(?<!\\|})   # must be preceded by nonword character, and not by escape or } (attribute)
-      (`)(?=\S[\S ]*\S`\W) # must be followed by inline characters and closed
+      (\[[^\]]*?\])?                  # might start with attributes list
+      (?<=^|[^\w\\}])                 # must be preceded by nonword character, and not by escape, } (attribute)
+      (`)(?=(\S+|\S[\S ]*\S)`[^\w"']) # must be followed by inline characters, closed and followed by non-word and non-quotes
     beginCaptures:
       '1': {name: support.variable.attributelist.asciidoc}
       '2': {name: punctuation.definition.literal.single.begin.asciidoc}
     end: |-
       (?x)
       (`)
-      (?!\w) # must be followed by a nonword character
+      (?=[^\w"']) # must be followed by a non-word and non-quotes character
     endCaptures:
       '1': {name: punctuation.definition.literal.single.end.asciidoc}
     patterns:
@@ -1818,7 +1834,7 @@ repository:
       (?x)
       (\[[^\]]*?\])?         # might start with attribute list (darned well better or why are we here)
       (?<=^|\W)(?<!\\|})     # must be preceded by nonword character, and not by escape or } (attribute)
-      (\#)(?=\S[\S ]*\S\#\W) # must be followed by inline characters and closed
+      (\#)(?=(\S+|\S[\S ]*\S)\#\W) # must be followed by inline characters and closed
     beginCaptures:
       '1': {name: support.variable.attributelist.asciidoc}
       '2': {name: punctuation.definition.string.unquoted.single.begin.asciidoc}

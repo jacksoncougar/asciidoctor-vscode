@@ -4,29 +4,29 @@
  *--------------------------------------------------------------------------------------------*/
 
 import * as vscode from 'vscode';
-import { MarkdownContributions } from './markdownExtensions';
+import { AsciidocContributions } from './asciidocExtensions';
 import { Slugifier } from './slugify';
 import { getUriForLinkWithKnownExternalScheme } from './util/links';
-import { AsciiDocParser } from './text-parser'
+import { AsciidocParser } from './text-parser'
 
 const FrontMatterRegex = /^---\s*[^]*?(-{3}|\.{3})\s*/;
 
-export class MarkdownEngine {
-    private ad?: AsciiDocParser;
+export class AsciidocEngine {
+    private ad?: AsciidocParser;
 
 	private firstLine?: number;
 
 	private currentDocument?: vscode.Uri;
 
 	public constructor(
-		private readonly extensionPreviewResourceProvider: MarkdownContributions,
+		private readonly extensionPreviewResourceProvider: AsciidocContributions,
 		private readonly slugifier: Slugifier,
 	) { }
 
 
-	private async getEngine(resource: vscode.Uri): Promise<AsciiDocParser> {
+	private async getEngine(resource: vscode.Uri): Promise<AsciidocParser> {
 		if (!this.ad) {
-            this.ad = new AsciiDocParser(resource.fsPath);
+            this.ad = new AsciidocParser(resource.fsPath);
 		}
 
 		const config = vscode.workspace.getConfiguration('asciidoc', resource);
@@ -47,9 +47,9 @@ export class MarkdownEngine {
 	public async render(document: vscode.Uri, stripFrontmatter: boolean, text: string): Promise<string> {
 		let offset = 0;
 		if (stripFrontmatter) {
-			const markdownContent = this.stripFrontmatter(text);
-			offset = markdownContent.offset;
-			text = markdownContent.text;
+			const asciidocContent = this.stripFrontmatter(text);
+			offset = asciidocContent.offset;
+			text = asciidocContent.text;
         }
 
 		this.currentDocument = document;

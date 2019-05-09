@@ -4559,7 +4559,7 @@ double colon followed by a space inside a label, i.e. it matches the
 			<string>(?x)
 (\[[^\]]*?\])?       # might be preceded by an attributes list
 (?&lt;=^|\W)(?&lt;!\\|})   # must be preceded by nonword character, and not by escape or } (attribute)
-(_)(?=\S[\S ]*\S_\W) # must be followed by inline characters and closed</string>
+(_)(?=(\S+|\S[\S ]*\S)_\W) # must be followed by inline characters and closed</string>
 			<key>beginCaptures</key>
 			<dict>
 				<key>1</key>
@@ -4845,6 +4845,10 @@ Examples:
 				<dict>
 					<key>include</key>
 					<string>#typographic_quotes_double</string>
+				</dict>
+				<dict>
+					<key>include</key>
+					<string>#typographic_quotes_single_close</string>
 				</dict>
 				<dict>
 					<key>include</key>
@@ -5183,7 +5187,7 @@ Examples:
 			<string>(?x)
 (\[[^\]]*?\])?         # might start with attribute list (darned well better or why are we here)
 (?&lt;=^|\W)(?&lt;!\\|})     # must be preceded by nonword character, and not by escape or } (attribute)
-(\#)(?=\S[\S ]*\S\#\W) # must be followed by inline characters and closed</string>
+(\#)(?=(\S+|\S[\S ]*\S)\#\W) # must be followed by inline characters and closed</string>
 			<key>beginCaptures</key>
 			<dict>
 				<key>1</key>
@@ -5365,9 +5369,9 @@ Examples:
 		<dict>
 			<key>begin</key>
 			<string>(?x)
-(\[[^\]]*?\])?       # might start with attributes list
-(?&lt;=^|\W)(?&lt;!\\|})   # must be preceded by nonword character, and not by escape or } (attribute)
-(`)(?=\S[\S ]*\S`\W) # must be followed by inline characters and closed</string>
+(\[[^\]]*?\])?                  # might start with attributes list
+(?&lt;=^|[^\w\\}])                 # must be preceded by nonword character, and not by escape, } (attribute)
+(`)(?=(\S+|\S[\S ]*\S)`[^\w"']) # must be followed by inline characters, closed and followed by non-word and non-quotes</string>
 			<key>beginCaptures</key>
 			<dict>
 				<key>1</key>
@@ -5393,7 +5397,7 @@ Examples:
 			<key>end</key>
 			<string>(?x)
 (`)
-(?!\w) # must be followed by a nonword character</string>
+(?=[^\w"']) # must be followed by a non-word and non-quotes character</string>
 			<key>endCaptures</key>
 			<dict>
 				<key>1</key>
@@ -5777,7 +5781,7 @@ sect\d|abstract|preface|colophon|dedication|glossary|bibliography|synopsis|appen
 			<string>(?x)
 (\[[^\]]*?\])?         # might start with an attributes list
 (?&lt;=^|\W)(?&lt;!\\|})     # must be preceded by nonword character, and not by escape or } (attribute)
-(\*)(?=\S[\S ]*\S\*\W) # must be followed by inline characters and closed</string>
+(\*)(?=(\S+|\S[\S ]*\S)\*\W) # must be followed by inline characters and closed</string>
 			<key>beginCaptures</key>
 			<dict>
 				<key>1</key>
@@ -6446,7 +6450,7 @@ Examples: E=mc^2^ E=mc[red]^2^
 			<string>(?x)
 (\[[^\]]*?\])?         # might be preceded by an attributes list
 (?&lt;=^|\W)(?&lt;!\\|})     # must be preceded by nonword character, and not by escape or } (attribute)
-("`)(?=\S[\S ]*\S`"\W) # must be followed by inline characters and closed</string>
+("`)(?=(\S+|\S[\S ]*\S)`"\W) # must be followed by inline characters and closed</string>
 			<key>beginCaptures</key>
 			<dict>
 				<key>1</key>
@@ -6544,7 +6548,7 @@ Examples:
 			<string>(?x)
 (\[[^\]]*?\])?         # might be preceded by an attributes list
 (?&lt;=^|\W)(?&lt;!\\|})     # must be preceded by nonword character, and not by escape or } (attribute)
-('`)(?=\S[\S ]*\S`'\W) # must be followed by inline characters and closed</string>
+('`)(?=(\S+|\S[\S ]*\S)`'\W) # must be followed by inline characters and closed</string>
 			<key>beginCaptures</key>
 			<dict>
 				<key>1</key>
@@ -6635,6 +6639,30 @@ Examples:
 					<string>#mail</string>
 				</dict>
 			</array>
+		</dict>
+		<key>typographic_quotes_single_close</key>
+		<dict>
+			<key>captures</key>
+			<dict>
+				<key>1</key>
+				<dict>
+					<key>name</key>
+					<string>punctuation.definition.typographic-quotes.single.end.asciidoc</string>
+				</dict>
+			</dict>
+			<key>comment</key>
+			<string>Closing single typographic quote.
+
+Examples:
+  Text
+</string>
+			<key>match</key>
+			<string>(?x)
+(\[[^\]]*?\])?              # might be preceded by an attributes list
+(?&lt;=^|[^\w\\}])             # must be preceded by nonword character, and not by escape, } (attribute)
+(`')(?!(( )?[^`\s])*`[^\w"']) # must not be closed by a constrained literal (`)</string>
+			<key>name</key>
+			<string>markup.italic.quote.typographic-quotes.single.asciidoc</string>
 		</dict>
 		<key>ulist_item_marker</key>
 		<dict>
