@@ -2,6 +2,8 @@ import * as path from 'path';
 import * as vscode from 'vscode';
 import { ChildProcess, spawn, exec, spawnSync, execSync } from 'child_process';
 import * as moment from 'moment';
+import { Uri } from 'vscode';
+import * as fs from 'fs';
 
 export namespace Import {
   export class Configuration {
@@ -11,20 +13,35 @@ export namespace Import {
 
     selectionRole: SelectionRole = SelectionRole.Filename;
     encoding: FilenameEncoding = FilenameEncoding.URIEncoding;
-    mode: SelectionMode = SelectionMode.Insert;
+    mode: SelectionMode = SelectionMode.Replace;
   }
 
+  /**
+   * What part of the image macro should the selection be used for.
+   *
+   * e.g. image::filename[alt-text]
+   */
   enum SelectionRole {
     Filename,
     AltText,
     None
   }
 
+  /**
+   * Controls if the selection is to be replaced with the image macro, or the
+   * image macro is to be inserted at the selection-cursor.
+   *
+   * e.g. |selection| => ||image:...[]
+   *      |selection| => |selection|image:...[]
+   */
   enum SelectionMode {
     Insert,
     Replace
   }
 
+  /**
+   * Controls how the image filename should be encoded, if at all.
+   */
   enum FilenameEncoding {
     None,
     URIEncoding
@@ -36,58 +53,76 @@ export namespace Import {
     Other
   }
 
+  class ScriptArgumentError extends Error {
+    message: string;
+  }
+
   export class Image {
-    static saveImageFromClipboard(filename: string): boolean {
-      const script = path.join(__dirname, '../../res\\pc.ps1');
+    /**
+     * Saves an image from the clipboard.
+     * @param filename the filename of the image file
+     */
+    static saveImageFromClipboard(filename: string) {
+      const script = path.join(__dirname, '../../res/pc.ps1');
 
-      console.log(process.cwd());
+      let promise = new Promise((resolve, reject) => {
+        let child = spawn('powershell', [
+          '-noprofile',
+          '-noninteractive',
+          '-nologo',
+          '-sta',
+          '-executionpolicy',
+          'unrestricted',
+          '-windowstyle',
+          'hidden',
+          '-file',
+          `${script}`,
+          `${filename}`
+        ]);
 
-      let child = spawnSync('powershell', [
-        '-noprofile',
-        '-noninteractive',
-        '-nologo',
-        '-sta',
-        '-executionpolicy',
-        'unrestricted',
-        '-windowstyle',
-        'hidden',
-        '-file',
-        `${script}`,
-        `'${filename}'`
-      ]);
-      /*
-                        child.stdout.on("data", function (data)
-                        {
-                            console.log("Powershell Data: " + data);
-                        });
-                        child.stderr.on("data", function (data)
-                        {
-                            console.log("Powershell Errors: " + data);
-                        });
-                        child.on("exit", function ()
-                        {
-                            console.log("Powershell Script finished");
-                        });
-                        child.stdin.end();
-                        */
+        child.stdout.once('data', e => resolve(e.toString()));
+        child.stderr.once('data', e => {
+          let exception = e.toString().trim();
+          if (
+            exception ==
+            'Exception calling "Open" with "2" argument(s): "Could not find a part of the path'
+          )
+            reject(new ScriptArgumentError('bad path exception'));
+          else if (exception == 'no image')
+            reject(new ScriptArgumentError('no image exception'));
+          else if (exception == 'no filename')
+            reject(new ScriptArgumentError('no filename exception'));
+        });
+        child.once('error', e => reject(e));
+      });
 
-      return child.status == 0;
+      return promise;
     }
 
-    static ImportFromClipboard(config: Configuration) {
+    static async importFromClipboard(config: Configuration) {
       config = config || new Configuration();
 
       const editor = vscode.window.activeTextEditor;
 
       let filename = moment()
-        .format('d-M-YYYY-HH-mm-ss-A.jpg')
-        .toString(); //todo: default filename
+        .format('d-M-YYYY-HH-mm-ss-A.png')
+        .toString(); //default filename
       let alttext = ''; //todo:...
       let directory = this.get_current_imagesdir();
 
-      // confirm directory is local--asciidoctor allows external URIs.
-      let uri = vscode.Uri.parse(directory);
-      if (uri.authority) return;
+      // confirm directory is local--asciidoctor allows external URIs. test for
+      // protocol (http, ftp, etc) to determine this
+
+      let remote = /'^(?:[a-z]+:)?\\/i.test(directory);
+      if (remote) {
+        vscode.window.showWarningMessage(
+          'Cannot determine save location for image because `imagesdir` attribute references a remote location.'
+        );
+        return;
+      }
+
+      // grab the selected text & update either the alt-attribute or filename
+      // corresponding to the selection role.
 
       const selectedText = editor.document.getText(editor.selection);
       if (!editor.selection.isEmpty) {
@@ -107,51 +142,44 @@ export namespace Import {
           break;
       }
 
-      if (
-        !this.saveImageFromClipboard(
-          `C:\\Users\\seed\\Documents\\jacksoncougar.github.io\\images\\${filename}`
-        )
-      )
+      try {
+        await this.saveImageFromClipboard(
+          path.join(vscode.workspace.rootPath, directory, filename)
+        );
+      } catch (error) {
+        if (error instanceof ScriptArgumentError) {
+          if (error.message == 'bad path exception') {
+            let folder = path.join(vscode.workspace.rootPath, directory);
+            vscode.window
+              .showErrorMessage(
+                `The imagesdir folder was not found (${folder}).`,
+                'Create Folder & Retry'
+              )
+              .then(async value => {
+                if (value == 'Create Folder & Retry') {
+                  fs.mkdirSync(folder);
+                  this.importFromClipboard(config); // try again
+                }
+              });
+          } else if (error.message == 'no image exception')
+            vscode.window.showInformationMessage(
+              'The system clipboard does not contain an image.'
+            );
+          else if (error.message == 'no filename exception')
+            vscode.window.showErrorMessage('Missing image filename argument.');
+        } else vscode.window.showErrorMessage(error.toString());
         return;
-
-      const affectedLines = new vscode.Range(
-        editor.selection.start.line,
-        0,
-        editor.selection.end.line + 1,
-        0
-      );
-
-      const startOffset = editor.document.offsetAt(
-        new vscode.Position(editor.selection.anchor.line, 0)
-      );
-      const activeOffset = editor.document.offsetAt(editor.selection.active);
-      const index = activeOffset - startOffset;
-
-      const affectedText = editor.document.getText(affectedLines);
-
-      let result = affectedText;
-
-      const prediction = 'image::...[...]';
-
-      switch (config.mode) {
-        case SelectionMode.Insert:
-          result =
-            affectedText.slice(0, index) +
-            prediction +
-            affectedText.slice(index);
-          break;
-        case SelectionMode.Replace:
-          result = affectedText.replace(selectedText, prediction);
-          break;
-        default:
-          return;
       }
 
-      const selected_text_is_block = /^[\t\f]*?image(?:::|::).+\[.*?\]\s*$/gim;
+      let is_inline = Image.predict(
+        config.mode,
+        Image.modifiedLines(editor),
+        editor.selection.anchor.character,
+        selectedText
+      );
+      let macro = `image${is_inline ? ':' : '::'}${filename}[${alttext}]`;
 
-      const is_inline = !selected_text_is_block.test(result);
-
-      const macro = `image${is_inline ? ':' : '::'}${filename}[${alttext}]`;
+      macro = Image.padMacro(config, editor, macro);
 
       editor.edit(edit => {
         switch (config.mode) {
@@ -163,6 +191,76 @@ export namespace Import {
             break;
         }
       });
+    }
+
+    // todo: tag functionl
+    private static padMacro(
+      config: Configuration,
+      editor: vscode.TextEditor,
+      macro: string
+    ) {
+      let { first, second } =
+        config.mode == SelectionMode.Replace
+          ? editor.selection.active.isAfter(editor.selection.anchor)
+            ? {
+                first: editor.selection.anchor,
+                second: editor.selection.active
+              }
+            : {
+                first: editor.selection.active,
+                second: editor.selection.anchor
+              }
+          : { first: editor.selection.active, second: editor.selection.active };
+      let selection = editor.document.getText(
+        new vscode.Range(
+          first.translate(0, first.character > 0 ? -1 : 0),
+          second.translate(0, 1)
+        )
+      );
+      let padHead = first.character != 0 && !/^\s/.test(selection);
+      let padTail = !/\s$/.test(selection);
+
+      macro = `${padHead ? ' ' : ''}${macro}${padTail ? ' ' : ''}`;
+      return macro;
+    }
+
+    /**
+     * Returns the lines that will be effected by the current editor selection
+     */
+    private static modifiedLines(editor: vscode.TextEditor) {
+      const affectedLines = new vscode.Range(
+        editor.selection.start.line,
+        0,
+        editor.selection.end.line + 1,
+        0
+      );
+      const affectedText = editor.document.getText(affectedLines);
+      return affectedText;
+    }
+
+    /**
+     * Determines if the resulting image-macro is an inline-image or
+     * block-image.
+     */
+    private static predict(
+      selectionMode: SelectionMode,
+      affectedText: string,
+      index: number,
+      selectedText: string
+    ) {
+      let result = '';
+      switch (selectionMode) {
+        case SelectionMode.Insert:
+          result = affectedText;
+          break;
+        case SelectionMode.Replace:
+          result = affectedText.replace(selectedText, '');
+          break;
+      }
+
+      // does the macro start at the beginning of the line and end in only
+      // whitespace.
+      return !(index === 0 && /^\s+$/.test(result));
     }
 
     /**

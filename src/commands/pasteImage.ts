@@ -1,17 +1,14 @@
 import { Command } from '../commandManager';
-import * as path from 'path';
-import { Logger, Paster } from '../image-paste';
-
-
+import { window } from 'vscode';
+import { Import } from '../asciidoctor-image-paste';
 export class PasteImage implements Command {
-    public readonly id = 'asciidoc.pasteImage';
+  public readonly id = 'asciidoc.pasteImage';
 
-    public execute() {
-        try {
-            Paster.paste();
-        } catch (e) {
-            Logger.showErrorMessage(e)
-        }
-	}
-
+  public execute() {
+    try {
+      Import.Image.importFromClipboard(undefined);
+    } catch (e) {
+      window.showErrorMessage(e);
+    }
+  }
 }
