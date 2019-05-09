@@ -39,5 +39,11 @@
     "asciidoc.styles": [],
     "asciidoc.trace": "off",
     "asciidoc.use_asciidoctor_js": true,
-    "asciidoc.use_asciidoctorpdf": false
+    "asciidoc.use_asciidoctorpdf": false,
+    "workbench.colorCustomizations": {
+        "titleBar.activeBackground": "#b50b57",
+        "titleBar.inactiveBackground": "#b50b5799",
+        "titleBar.activeForeground": "#e7e7e7",
+        "titleBar.inactiveForeground": "#e7e7e799"
+    }
 }

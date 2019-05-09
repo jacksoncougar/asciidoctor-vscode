@@ -4,7 +4,7 @@ Jackson C. Wiebe <jacksoncougar@gmail.com>
 .With this fork I want to enable intuitive asciidoctor content creation:
 Images::
 - [x] Paste images from the clipboard.
-- [ ] Save images into current :mediadir: (this would depend on the current context in the document).
+- [ ] Save images into current :imagesdir: (this would depend on the current context in the document).
 
 
 
